@@ -38,45 +38,124 @@ data:
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Kitchen Order Tracker</title>
+
       <style>
-        :root { --bg:#0b1120; --card:#111827; --border:#263347; --text:#e5e7eb; --muted:#9ca3af; --blue:#58a6ff; --green:#3fb950; --red:#f78166; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); max-width: 880px; margin: 0 auto; padding: 28px 16px; }
-        h1 { margin: 0 0 10px; font-size: 28px; }
-        .sub { color: var(--muted); margin: 0 0 18px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
-        .row { display:flex; gap:10px; align-items:center; }
-        input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #0d1117; color: var(--text); }
-        button { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: rgba(88,166,255,.15); color: var(--text); cursor:pointer; }
-        button:hover { background: rgba(88,166,255,.25); }
-        .pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; color: var(--muted); font-size: 12px; }
-        .ok { color: var(--green); }
-        .bad { color: var(--red); }
-        table { width:100%; border-collapse: collapse; font-size: 14px; }
-        th, td { padding: 10px 8px; border-bottom: 1px solid rgba(38,51,71,.65); text-align: left; }
-        th { color: var(--muted); font-weight: 600; }
-        a { color: var(--blue); text-decoration: none; }
-        .footer { margin-top: 14px; color: var(--muted); font-size: 12px; }
+        body {
+          font-family: Arial, sans-serif;
+          background: #f5f6fa;
+          color: #333;
+          max-width: 900px;
+          margin: auto;
+          padding: 20px;
+        }
+
+        h1 {
+          margin-bottom: 5px;
+        }
+
+        .sub {
+          color: #666;
+          margin-bottom: 20px;
+        }
+
+        .grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+
+        .card {
+          background: #ffffff;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+          padding: 15px;
+        }
+
+        .row {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
+        input {
+          width: 100%;
+          padding: 10px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+        }
+
+        button {
+          padding: 10px 12px;
+          border-radius: 6px;
+          border: none;
+          background: #007bff;
+          color: white;
+          cursor: pointer;
+        }
+
+        button:hover {
+          background: #0056b3;
+        }
+
+        .pill {
+          padding: 5px 10px;
+          border: 1px solid #ccc;
+          border-radius: 20px;
+          font-size: 12px;
+          color: #555;
+        }
+
+        .ok { color: green; }
+        .bad { color: red; }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 14px;
+        }
+
+        th, td {
+          padding: 8px;
+          border-bottom: 1px solid #ddd;
+          text-align: left;
+        }
+
+        th {
+          color: #555;
+        }
+
+        .footer {
+          margin-top: 10px;
+          font-size: 12px;
+          color: #777;
+        }
+
+        @media (max-width: 800px) {
+          .grid {
+            grid-template-columns: 1fr;
+          }
+        }
       </style>
     </head>
 
     <body>
-      <h1>🍴 Kitchen Order Tracker</h1>
-      <p class="sub">Monitor and manage real-time food orders in a cloud-based system.</p>
+
+      <h1>Kitchen Order Tracker</h1>
+      <p class="sub">Monitor and manage food orders in real-time.</p>
 
       <div class="grid">
 
         <div class="card">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <div class="pill">Server: <span id="apiStatus" class="bad">checking…</span></div>
-            <div class="row" style="gap:12px;">
+            <div class="pill">Server: <span id="apiStatus" class="bad">checking...</span></div>
+            <div class="row">
               <a href="/api/metrics" target="_blank">Metrics</a>
               <a href="/api/health" target="_blank">Health</a>
             </div>
           </div>
 
           <div class="row">
-            <input id="dish" placeholder="Enter dish (e.g. Chicken Biryani)" />
+            <input id="dish" placeholder="Enter dish (e.g. Dosa)" />
             <button id="createBtn">Add Order</button>
           </div>
 
@@ -86,30 +165,22 @@ data:
         <div class="card">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
             <div class="pill">Total Orders: <span id="orderCount">0</span></div>
-            <div class="row">
-              <button id="refreshBtn">Refresh</button>
-            </div>
+            <button id="refreshBtn">Refresh</button>
           </div>
 
-          <div style="overflow:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Dish</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>ID</th>
-                </tr>
-              </thead>
-              <tbody id="ordersBody">
-                <tr><td colspan="4">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="footer">
-            Tip: Use monitoring tools to observe request traffic and system performance.
-          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Dish</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>ID</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody">
+              <tr><td colspan="4">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
 
       </div>
@@ -155,11 +226,6 @@ data:
 
             const orders = data || [];
             el('orderCount').textContent = orders.length;
-
-            if (!orders.length) {
-              body.innerHTML = '<tr><td colspan="4">No orders yet</td></tr>';
-              return;
-            }
 
             body.innerHTML = orders.slice().reverse().map(o => `
               <tr>
