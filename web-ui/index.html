@@ -1,77 +1,191 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Kitchen Order Tracker</title>
-</head>
 
-<body>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Kitchen App v2</title>
 
-  <h1> Kitchen Order Tracker</h1>
+      <style>
+        body {
+          margin: 0;
+          font-family: Arial, sans-serif;
+          background: #0f172a;
+          color: #e2e8f0;
+          display: flex;
+        }
 
-  <h3>Add New Order</h3>
-  <input id="dish" placeholder="Dish name">
-  <button onclick="createOrder()">Add</button>
-  <button onclick="loadOrders()">Refresh</button>
+        .sidebar {
+          width: 220px;
+          background: #020617;
+          padding: 20px;
+        }
 
-  <hr>
+        .sidebar h2 {
+          color: #38bdf8;
+        }
 
-  <h3>Order List</h3>
+        .sidebar ul {
+          list-style: none;
+          padding: 0;
+        }
 
-  <table border="1" cellpadding="8">
-    <thead>
-      <tr>
-        <th>Dish</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="orders"></tbody>
-  </table>
+        .sidebar li {
+          padding: 10px 0;
+          color: #94a3b8;
+        }
 
-<script>
-const API = "http://localhost:3000";
+        .main {
+          flex: 1;
+          padding: 20px;
+        }
 
-async function loadOrders(){
-  const res = await fetch(API + "/orders");
-  const data = await res.json();
+        .card {
+          background: #1e293b;
+          padding: 15px;
+          border-radius: 10px;
+          margin-bottom: 20px;
+        }
 
-  const table = document.getElementById("orders");
-  table.innerHTML = "";
+        input {
+          padding: 10px;
+          width: 70%;
+          border: 1px solid #334155;
+          border-radius: 6px;
+          background: #020617;
+          color: white;
+        }
 
-  data.forEach(order => {
-    const row = document.createElement("tr");
+        button {
+          padding: 10px;
+          background: #22c55e;
+          border: none;
+          border-radius: 6px;
+          color: white;
+          cursor: pointer;
+        }
 
-    row.innerHTML = `
-      <td>${order.dish}</td>
-      <td>${order.status}</td>
-    `;
+        button:hover {
+          background: #16a34a;
+        }
 
-    table.appendChild(row);
-  });
-}
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
 
-async function createOrder(){
-  const dish = document.getElementById("dish").value;
+        th, td {
+          padding: 10px;
+          border-bottom: 1px solid #334155;
+        }
 
-  if(!dish){
-    alert("Enter a dish name");
-    return;
-  }
+        th {
+          background: #020617;
+        }
 
-  await fetch(API + "/orders", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ dish })
-  });
+        .menu-item {
+          background: #334155;
+          padding: 8px;
+          margin: 5px 0;
+          border-radius: 5px;
+        }
+      </style>
+    </head>
 
-  document.getElementById("dish").value = "";
-  loadOrders();
-}
+    <body>
 
-// auto refresh every 5 sec
-setInterval(loadOrders, 5000);
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <h2>Kitchen v2</h2>
+        <ul>
+          <li>Dashboard</li>
+          <li>Orders</li>
+          <li>Menu</li>
+        </ul>
+      </div>
 
-loadOrders();
-</script>
+      <!-- Main -->
+      <div class="main">
 
-</body>
-</html>
+        <h1>Kitchen Dashboard</h1>
+
+        <!-- Add Order -->
+        <div class="card">
+          <h3>Add Order</h3>
+          <input id="dish" placeholder="Enter dish name" />
+          <button onclick="createOrder()">Add</button>
+          <p id="msg"></p>
+        </div>
+
+        <!-- NEW MENU SECTION -->
+        <div class="card">
+          <h3>Menu Items (New Feature)</h3>
+          <div class="menu-item">Chicken Biryani</div>
+          <div class="menu-item">Fish Fry</div>
+          <div class="menu-item">Paneer Butter Masala</div>
+          <div class="menu-item">Masala Dosa</div>
+        </div>
+
+        <!-- Orders -->
+        <div class="card">
+          <h3>Total Orders: <span id="count">0</span></h3>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Dish</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="orders"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <script>
+        const API = '/api';
+
+        function el(id) { return document.getElementById(id); }
+
+        function formatDate(v) {
+          try { return new Date(v).toLocaleTimeString(); }
+          catch { return ''; }
+        }
+
+        async function refreshOrders() {
+          const res = await fetch(API + '/orders');
+          const data = await res.json();
+
+          el('count').innerText = data.length;
+
+          el('orders').innerHTML = data.reverse().map(o => `
+            <tr>
+              <td>${o.dish}</td>
+              <td>${o.status}</td>
+              <td>${formatDate(o.createdAt)}</td>
+            </tr>
+          `).join('');
+        }
+
+        async function createOrder() {
+          const dish = el('dish').value.trim();
+          if (!dish) return;
+
+          await fetch(API + '/orders', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ dish })
+          });
+
+          el('dish').value = "";
+          el('msg').innerText = "Order Added!";
+          refreshOrders();
+        }
+
+        refreshOrders();
+        setInterval(refreshOrders, 5000);
+      </script>
+
+    </body>
+    </html>

@@ -36,232 +36,190 @@ data:
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Kitchen Order Tracker</title>
+      <title>Kitchen Dashboard Dark</title>
 
       <style>
         body {
+          margin: 0;
           font-family: Arial, sans-serif;
-          background: #f5f6fa;
-          color: #333;
-          max-width: 900px;
-          margin: auto;
+          display: flex;
+          height: 100vh;
+          background: #0f172a;
+          color: #e2e8f0;
+        }
+
+        .sidebar {
+          width: 220px;
+          background: #020617;
           padding: 20px;
         }
 
-        h1 {
-          margin-bottom: 5px;
-        }
-
-        .sub {
-          color: #666;
+        .sidebar h2 {
           margin-bottom: 20px;
         }
 
-        .grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
+        .sidebar p {
+          font-size: 14px;
+          color: #94a3b8;
+        }
+
+        .main {
+          flex: 1;
+          padding: 20px;
+        }
+
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
         }
 
         .card {
-          background: #ffffff;
-          border: 1px solid #ddd;
-          border-radius: 10px;
+          background: #1e293b;
           padding: 15px;
-        }
-
-        .row {
-          display: flex;
-          gap: 10px;
-          align-items: center;
+          border-radius: 10px;
+          margin-bottom: 20px;
         }
 
         input {
-          width: 100%;
           padding: 10px;
+          width: 70%;
+          border: 1px solid #334155;
           border-radius: 6px;
-          border: 1px solid #ccc;
+          background: #0f172a;
+          color: white;
         }
 
         button {
-          padding: 10px 12px;
-          border-radius: 6px;
+          padding: 10px;
           border: none;
-          background: #007bff;
+          background: #3b82f6;
           color: white;
+          border-radius: 6px;
           cursor: pointer;
         }
 
         button:hover {
-          background: #0056b3;
+          background: #2563eb;
         }
-
-        .pill {
-          padding: 5px 10px;
-          border: 1px solid #ccc;
-          border-radius: 20px;
-          font-size: 12px;
-          color: #555;
-        }
-
-        .ok { color: green; }
-        .bad { color: red; }
 
         table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 14px;
         }
 
         th, td {
-          padding: 8px;
-          border-bottom: 1px solid #ddd;
+          padding: 10px;
+          border-bottom: 1px solid #334155;
           text-align: left;
         }
 
         th {
-          color: #555;
+          background: #020617;
         }
 
-        .footer {
-          margin-top: 10px;
-          font-size: 12px;
-          color: #777;
-        }
-
-        @media (max-width: 800px) {
-          .grid {
-            grid-template-columns: 1fr;
-          }
-        }
+        .status-ok { color: #22c55e; }
+        .status-bad { color: #ef4444; }
       </style>
     </head>
 
     <body>
 
-      <h1>Kitchen Order Tracker</h1>
-      <p class="sub">Monitor and manage food orders in real-time.</p>
+      <div class="sidebar">
+        <h2>Kitchen Panel</h2>
+        <p>Dark Mode UI</p>
+        <p>Status: <span id="apiStatus" class="status-bad">checking...</span></p>
+      </div>
 
-      <div class="grid">
+      <div class="main">
 
-        <div class="card">
-          <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <div class="pill">Server: <span id="apiStatus" class="bad">checking...</span></div>
-            <div class="row">
-              <a href="/api/metrics" target="_blank">Metrics</a>
-              <a href="/api/health" target="_blank">Health</a>
-            </div>
-          </div>
-
-          <div class="row">
-            <input id="dish" placeholder="Enter dish (e.g. Dosa)" />
-            <button id="createBtn">Add Order</button>
-          </div>
-
-          <div class="footer" id="createMsg"></div>
+        <div class="header">
+          <h1>Order Dashboard</h1>
+          <button onclick="refreshOrders()">Refresh</button>
         </div>
 
         <div class="card">
-          <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <div class="pill">Total Orders: <span id="orderCount">0</span></div>
-            <button id="refreshBtn">Refresh</button>
-          </div>
+          <h3>Add New Order</h3>
+          <input id="dish" placeholder="Enter dish name..." />
+          <button onclick="createOrder()">Add</button>
+          <p id="msg"></p>
+        </div>
+
+        <div class="card">
+          <h3>Total Orders: <span id="count">0</span></h3>
 
           <table>
             <thead>
               <tr>
                 <th>Dish</th>
                 <th>Status</th>
-                <th>Created</th>
-                <th>ID</th>
+                <th>Time</th>
               </tr>
             </thead>
-            <tbody id="ordersBody">
-              <tr><td colspan="4">Loading...</td></tr>
-            </tbody>
+            <tbody id="orders"></tbody>
           </table>
         </div>
 
       </div>
 
       <script>
-        const apiBase = '/api';
-        const el = (id) => document.getElementById(id);
+        const API = '/api';
 
-        function fmtDate(v) {
-          try { return new Date(v).toLocaleString(); }
+        function el(id) { return document.getElementById(id); }
+
+        function formatDate(v) {
+          try { return new Date(v).toLocaleTimeString(); }
           catch { return ''; }
         }
 
-        async function apiGet(path) {
-          const r = await fetch(apiBase + path);
-          return { r, data: await r.json().catch(() => null) };
-        }
-
-        async function refreshHealth() {
-          const s = el('apiStatus');
+        async function checkHealth() {
           try {
-            const { r, data } = await apiGet('/health');
+            const r = await fetch(API + '/health');
             if (r.ok) {
-              s.textContent = data?.db || 'ok';
-              s.className = 'ok';
+              el('apiStatus').innerText = "online";
+              el('apiStatus').className = "status-ok";
             } else {
-              s.textContent = 'error';
-              s.className = 'bad';
+              el('apiStatus').innerText = "error";
             }
           } catch {
-            s.textContent = 'offline';
-            s.className = 'bad';
+            el('apiStatus').innerText = "offline";
           }
         }
 
         async function refreshOrders() {
-          const body = el('ordersBody');
-          body.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+          const res = await fetch(API + '/orders');
+          const data = await res.json();
 
-          try {
-            const { r, data } = await apiGet('/orders');
-            if (!r.ok) throw new Error();
+          el('count').innerText = data.length;
 
-            const orders = data || [];
-            el('orderCount').textContent = orders.length;
-
-            body.innerHTML = orders.slice().reverse().map(o => `
-              <tr>
-                <td>${o.dish}</td>
-                <td>${o.status}</td>
-                <td>${fmtDate(o.createdAt)}</td>
-                <td>${o._id}</td>
-              </tr>
-            `).join('');
-
-          } catch {
-            body.innerHTML = '<tr><td colspan="4">Error loading orders</td></tr>';
-          }
+          el('orders').innerHTML = data.reverse().map(o => `
+            <tr>
+              <td>${o.dish}</td>
+              <td>${o.status}</td>
+              <td>${formatDate(o.createdAt)}</td>
+            </tr>
+          `).join('');
         }
 
         async function createOrder() {
           const dish = el('dish').value.trim();
           if (!dish) return;
 
-          await fetch(apiBase + '/orders', {
+          await fetch(API + '/orders', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ dish })
           });
 
-          el('dish').value = '';
+          el('dish').value = "";
+          el('msg').innerText = "Order added!";
           refreshOrders();
-          refreshHealth();
         }
 
-        el('createBtn').onclick = createOrder;
-        el('refreshBtn').onclick = refreshOrders;
-
-        refreshHealth();
+        checkHealth();
         refreshOrders();
-        setInterval(refreshHealth, 8000);
+        setInterval(checkHealth, 5000);
         setInterval(refreshOrders, 5000);
       </script>
 
@@ -286,7 +244,7 @@ spec:
     spec:
       containers:
         - name: kitchen-web-ui
-          image: nginx:alpine
+          image: kitchen-web-ui:v2
           ports:
             - containerPort: 80
           volumeMounts:
@@ -315,3 +273,5 @@ spec:
     - port: 80
       targetPort: 80
       nodePort: 30080
+
+
