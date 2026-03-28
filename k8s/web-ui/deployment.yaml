@@ -244,7 +244,17 @@ spec:
     spec:
       containers:
         - name: kitchen-web-ui
-          image: kitchen-web-ui:v2
+          image: kitchen-web-ui:v3
+
+          #BONUS 
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+
           ports:
             - containerPort: 80
           volumeMounts:
@@ -273,5 +283,3 @@ spec:
     - port: 80
       targetPort: 80
       nodePort: 30080
-
-
